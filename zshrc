@@ -70,3 +70,155 @@ export EDITOR=code
 
 # Set ipdb as the default Python debugger
 export PYTHONBREAKPOINT=ipdb.set_trace
+
+# Do not use export VAR without a value. Better use set -a.
+set -a
+
+: ${LEVEL:=-1}
+let LEVEL=LEVEL+1
+
+NULLCMD=:
+RANDOM=$$
+
+WINEDITOR="${VISUAL:=${EDITOR:=vim}}"
+FCEDIT=vim
+
+# (
+case "$-" in
+	*i*)
+		CDPATH=:..:../..
+
+		# (
+		case "${ZSH_VERSION}" in
+			[3-9].*)
+				setopt AUTO_PARAM_SLASH
+				setopt BEEP
+				setopt CLOBBER
+				;;
+		esac
+
+		set -E  # PUSHD_SILENT
+		set -D  # PUSHD_TO_HOME
+		set -o PUSHD_IGNORE_DUPS
+		set -h	# HIST_IGNORE_DUPS
+		set -k	# INTERACTIVE_COMMENTS
+
+		setopt AUTO_CD
+		setopt AUTO_LIST
+		setopt AUTO_PUSHD
+		setopt AUTO_REMOVE_SLASH
+		setopt CDABLE_VARS
+		setopt PRINT_EXIT_VALUE
+		setopt HIST_IGNORE_DUPS
+		setopt INTERACTIVE_COMMENTS
+		# setopt MARK_DIRS
+		alias markdirs='setopt MARK_DIRS'
+		alias unmarkdirs='unsetopt MARK_DIRS'
+
+		alias lr='ls -R | grep ":$" | sed -e '\''s/:$//'\'' -e '\''s/[^-][^\/]*\//--/g'\'' -e '\''s/^/   /'\'' -e '\''s/-/|/'\'''
+
+		setopt PUSHD_IGNORE_DUPS
+		setopt PUSHD_SILENT
+		setopt PUSHD_TO_HOME
+
+		for i in ls ll lt unalias
+			do
+				# ((
+				case "$(whence -v $i)" in
+					"$i is an alias for"*) builtin unalias $i;;
+					"$i is a shell function"*) builtin unset -f $i;;
+				esac
+			done
+
+		alias	ll='command /bin/ls -lFb'
+		lt	() { command /bin/ls -lFtb $@ ; }
+		rs	() { eval `resize -u` ; export TERMCAP ; }
+		cdpwd	() { cd `/bin/pwd` ; }
+		setenv	() { # var value
+			eval export "$1"="\"$2\""
+		} # setenv
+		unsetenv () { # var.....
+			unset $@
+		} # unsetenv
+		ifndef () { # var value
+			eval export $1=\${$1-\$2}
+		} # ifndef
+		ifnull()   { eval export $1=\${$1:-\$2} ; }
+		append()   { eval export $1=\${$1:+\$$1${2:+:}}\$2 ; }
+		prepend()  { eval export $1=\$2\${$1:+${2:+:}\$$1} ; }
+
+		alias	:ta='vim -t'
+		alias	:n=vim
+		alias	a=alias
+		alias	ec='echo $?'
+		alias	h="fc -l"
+		alias	so=.
+		alias	j='jobs -l'
+		alias -- -='cd -'
+		alias	l=ll
+		alias	cls='echotc clear'
+		alias	zshrc='let LEVEL=LEVEL-1;. ~/.zshrc'
+
+		if [ -n "${FPATH}" ]
+			then FPATH="${HOME}/zshautoload${PSEP}${FPATH}"
+			else FPATH=${HOME}/zshautoload
+		fi
+
+		stty ixon echo echoe -tabs isig icanon erase "^H" intr "^C" eof "^D" -nl
+		compctl -v export integer typeset declare readonly unset vared
+		compctl -c man nohup env
+		compctl -caF type whence which
+		compctl -u whois finger id
+		compctl -g '*(-/)' cd chdir pushd rmdir
+		compctl -g '*.Z' + -g '*(-/)' uncompress
+		compctl -g '*.(tar|tgz|tar.gz)' + -g '*(-/)' gnutar gtar tar zcat zmore zless
+		compctl -u -x 'r[-c,;]' -l '' -- su
+
+		for i in 1 2 3 4 5 6 7 8 9
+			do
+				alias ${i}="fg %${i}"
+			done
+
+		# Switch to vi mode and let BS work like in vi(1).
+		bindkey -v
+		bindkey -a '^H' backward-char
+		bindkey -a 'J' vi-join
+		bindkey -a '?' which-command
+		# The next should be append-last-word
+		# bindkey -a '_' insert-last-word
+		# This comes close to ksh(1)'s version of ESC-_
+		# bindkey -s -a '_' 'a \033-$by$+$pA'
+		# bindkey -s -a '_' 'a \033-A \033byw+$pea'
+		# Must set this for version 3.1.2
+		bindkey -a '\M-_' insert-last-word
+		# This seems to do the trick. \M-_ is insert-last-word.
+		bindkey -s -a '_' 'a  \E\M-_s'
+
+		[ -r "${HOME}/.exrc" ] && EXINIT="so ${HOME}/.exrc"
+
+		for i in . ${HOME}/bin /bin /usr/sbin /sbin /usr/local/bin /usr/ucb ${OPENWINHOME}/bin /home/estw_ddts/ddts/bin /tools/gnu/bin /tools/samba/bin /home/manager/tdsc/Admintools /etc/venus/current/etc /usr/local/venus/ldap/admin/sbin /usr/local/ssh/bin /usr/local/scadmintools/bin /etc/venus/current/bin /opt/GNU/bin /usr/local/scadmintools/bin /opt/cc_scripts/ibm/bin  /usr/sfw/bin
+			do
+				case "${PATH}" in
+					"$i"|"$i":*|*:"$i":*|*:"$i")
+						;;
+					*)
+						[ -d "$i/." ] && PATH="${PATH}:$i"
+						;;
+				esac
+			done
+
+		for i in ${HOME}/man /usr/man ${OPENWINHOME}/man /usr/local/man /tools/gnu/man
+			do
+				case "${MANPATH}" in
+					"$i"|"$i":*|*:"$i":*|*:"$i")
+						;;
+					*)
+						[ -d "$i/." ] && MANPATH="${MANPATH}:$i"
+						;;
+				esac
+			done
+		;;
+esac
+
+set +a
+
